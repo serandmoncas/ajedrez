@@ -16,7 +16,17 @@ const PIECE_VALUE: Record<PieceSymbol, number> = { p: 1, n: 3, b: 3, r: 5, q: 9,
 
 function tryChess(fen: string): Chess | undefined {
   try {
-    return new Chess(fen);
+    const chess = new Chess(fen);
+    // chess.js accepts positions where the side NOT to move is in check; those are unreachable.
+    const waiting: Color = chess.turn() === "w" ? "b" : "w";
+    for (const row of chess.board()) {
+      for (const sq of row) {
+        if (sq && sq.type === "k" && sq.color === waiting && chess.isAttacked(sq.square, chess.turn())) {
+          return undefined;
+        }
+      }
+    }
+    return chess;
   } catch {
     return undefined;
   }
@@ -26,8 +36,9 @@ function tryChess(fen: string): Chess | undefined {
 function playUci(chess: Chess, uci: string): boolean {
   if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) return false;
   try {
-    chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.slice(4, 5) || undefined });
-    return true;
+    const m = chess.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci.slice(4, 5) || undefined });
+    // chess.js ignores a promotion suffix on a non-promotion move; the UCI must round-trip exactly.
+    return m.from + m.to + (m.promotion ?? "") === uci;
   } catch {
     return false;
   }
@@ -105,11 +116,11 @@ function checkCombination(item: ContentItem & { kind: "combination" }, out: Issu
     }
   }
   if (item.expect === "mate") {
-    if (!chess.isCheckmate()) {
+    if (!chess.isCheckmate() || chess.turn() === solver) {
       out.push({
         itemId: item.id,
         rule: "combination-outcome",
-        message: "Se esperaba jaque mate al final de la solución, pero la secuencia no termina en mate.",
+        message: "Se esperaba que quien resuelve dé jaque mate al final de la solución, pero la secuencia no termina así.",
       });
     }
     return;

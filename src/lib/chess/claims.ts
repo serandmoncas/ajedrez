@@ -5,13 +5,13 @@ import type { Claim } from "../content/schema";
 export type EngineResult = {
   claimId: string;
   fen: string;
-  move?: string;
+  move?: string; // the claim's SAN exactly as written in the content (not UCI); compared as a string for staleness
   depth: number;
   evalCp?: number; // centipawns, side to move in `fen`
-  mateIn?: number; // mate for the side to move in `fen` when >= 0, against it when < 0
+  mateIn?: number; // from the side to move in `fen`: >= 0 mate for them, < 0 mate against them
   bestMove: string; // UCI
   moveEvalCp?: number; // evaluation after `move`, same point of view (side to move in `fen`)
-  moveMateIn?: number; // same sign convention as mateIn; 0 means `move` itself mates
+  moveMateIn?: number; // from the mover's perspective (side to move in `fen`), after `move`: 0 = the move itself mates
 };
 
 export const MIN_DEPTH = 20;

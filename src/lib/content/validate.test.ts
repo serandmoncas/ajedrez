@@ -81,6 +81,25 @@ describe("validateBundle", () => {
     expect(rules([combination({ solution: ["a1a8"] })])).toEqual([]);
   });
 
+  it("combination-outcome: mate against the solver does not count", () => {
+    // white plays b3, black answers Ra1# : the final position is mate, but the solver is mated
+    const c = combination({ fen: "r6k/8/8/8/8/8/1P4PP/7K w - - 0 1", solution: ["b2b3", "a8a1"], expect: "mate" });
+    expect(rules([c])).toEqual(["combination-outcome"]);
+  });
+
+  it("illegal-solution: promotion suffix on a non-promotion move", () => {
+    expect(rules([combination({ solution: ["a1a8q"] })])).toEqual(["illegal-solution"]);
+    const promo = combination({ fen: "8/4P1k1/8/8/8/8/8/6K1 w - - 0 1", solution: ["e7e8q"], expect: "material" });
+    expect(rules([promo])).toEqual([]);
+  });
+
+  it("illegal-fen: side not to move is in check", () => {
+    expect(rules([pattern({ examples: [{ fen: "4k3/8/8/8/8/8/8/4RK2 w - - 0 1", solution: ["e1e2"] }] })])).toEqual([
+      "illegal-fen",
+    ]);
+    expect(rules([combination({ fen: "4k3/8/8/8/8/8/8/4RK2 w - - 0 1" })])).toContain("illegal-fen");
+  });
+
   it("combination-outcome: material gain from the solver's side", () => {
     // white rook takes the black queen on a8
     const fen = "q5k1/8/8/8/8/8/8/R5K1 w - - 0 1";
