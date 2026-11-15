@@ -1,7 +1,12 @@
 node_modules
 .next
+out
+next-env.d.ts
+*.tsbuildinfo
+.DS_Store
 .superpowers/
 data/raw/
 *.ajedrez-respaldo.json
 .env*
 !.env.example
+public/content/

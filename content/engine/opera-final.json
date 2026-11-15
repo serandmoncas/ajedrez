@@ -1,0 +1,11 @@
+[
+  {
+    "claimId": "db8-gana",
+    "fen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16",
+    "depth": 22,
+    "bestMove": "b3b8",
+    "mateIn": 2,
+    "move": "Qb8+",
+    "moveMateIn": 1
+  }
+]

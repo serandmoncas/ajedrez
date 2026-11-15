@@ -1,0 +1,22 @@
+// Spanish names for Lichess puzzle themes, used in hints.
+export const THEMES_ES: Record<string, string> = {
+  backRankMate: "mate del pasillo",
+  fork: "horquilla",
+  pin: "clavada",
+  skewer: "enfilada",
+  xRayAttack: "rayos X",
+  deflection: "desviación",
+  attraction: "atracción",
+  discoveredAttack: "ataque a la descubierta",
+  doubleCheck: "jaque doble",
+  smotheredMate: "mate de la coz",
+  anastasiaMate: "mate de Anastasia",
+  hangingPiece: "pieza colgada",
+  mateIn1: "mate en 1",
+  mateIn2: "mate en 2",
+  mateIn3: "mate en 3",
+  sacrifice: "sacrificio",
+  pawnEndgame: "final de peones",
+  rookEndgame: "final de torres",
+  queenEndgame: "final de damas",
+};

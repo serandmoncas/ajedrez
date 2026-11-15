@@ -1,0 +1,52 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { use, useEffect, useState } from "react";
+import { Lesson } from "@/components/Lesson";
+import { createIndexedDbStore } from "@/lib/progress/store";
+import { fetchBundle, type BundleItem } from "@/lib/content/bundle-client";
+import { userMessage } from "@/lib/errors";
+
+type Loaded = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; item: BundleItem | null; titles: Record<string, string>; introduced: Record<string, string> };
+
+export default function LearnPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const router = useRouter();
+  const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchBundle(),
+      createIndexedDbStore()
+        .load()
+        .then((p) => p.introduced)
+        .catch((): Record<string, string> => ({})),
+    ])
+      .then(([b, introduced]) => {
+        const titles = Object.fromEntries(b.items.map((i) => [i.id, i.title]));
+        if (!cancelled) {
+          setLoaded({ status: "ok", item: b.items.find((i) => i.id === id) ?? null, titles, introduced });
+        }
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setLoaded({ status: "error", message: userMessage(e, "No se pudo cargar esta lección. Inténtalo de nuevo.") });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  return (
+    <main className="mx-auto flex max-w-xl flex-col gap-4 p-6">
+      {loaded.status === "loading" && <p>Cargando...</p>}
+      {loaded.status === "error" && <p>{loaded.message}</p>}
+      {loaded.status === "ok" &&
+        (loaded.item ? (
+          <Lesson item={loaded.item} titles={loaded.titles} introduced={loaded.introduced} onContinue={() => router.push("/")} />
+        ) : (
+          <p>No encontrado</p>
+        ))}
+    </main>
+  );
+}
