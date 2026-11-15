@@ -31,4 +31,27 @@ describe("LineRunner", () => {
     move("g1f3");
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ firstTry: false, userMoves: 3 }));
   });
+
+  it("Ver solución shows the rest of the line in Spanish and fails on Continuar", () => {
+    const onDone = vi.fn();
+    render(<LineRunner opening={opening} lineId="l1" onDone={onDone} />);
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    move("e2e4");
+    fireEvent.click(screen.getByRole("button", { name: "Ver solución" }));
+    expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByText(/Solución: .*Cf3/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ failed: true }));
+  });
+
+  it("marks failed when mistakes reach max(2, ceil(required/2))", () => {
+    const onDone = vi.fn();
+    render(<LineRunner opening={opening} lineId="l1" onDone={onDone} />);
+    fireEvent.click(screen.getByRole("button", { name: "Empezar" }));
+    move("d2d4");
+    move("d2d3");
+    move("e2e4");
+    move("g1f3");
+    expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ failed: true }));
+  });
 });

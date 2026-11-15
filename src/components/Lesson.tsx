@@ -8,11 +8,13 @@ import type { BundleItem } from "@/lib/content/bundle-client";
 type Props = {
   item: BundleItem;
   onContinue: () => void;
-  /** id -> title of the content the user already studied. */
+  /** id -> ISO date the user first studied it (status only). */
   introduced?: Record<string, string>;
+  /** id -> title, used as link text. */
+  titles?: Record<string, string>;
 };
 
-export function Lesson({ item, onContinue, introduced = {} }: Props) {
+export function Lesson({ item, onContinue, introduced = {}, titles = {} }: Props) {
   const links = item.links;
   const linkedIds = links
     ? [
@@ -43,7 +45,7 @@ export function Lesson({ item, onContinue, introduced = {} }: Props) {
           {linkedIds.map((id) => (
             <li key={id}>
               <Link href={`/aprender/${id}`} className="underline">
-                {introduced[id] ?? id}
+                {titles[id] ?? "contenido"}
               </Link>{" "}
               <span className="text-[var(--subtle)]">
                 ({id in introduced ? "ya la estudiaste" : "la verás más adelante"})

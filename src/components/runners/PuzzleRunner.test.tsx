@@ -40,6 +40,8 @@ describe("PuzzleRunner", () => {
     const onDone = setup();
     fireEvent.click(screen.getByRole("button", { name: "Ver solución" }));
     expect(onDone).not.toHaveBeenCalled();
+    expect(screen.getByText(/Solución: 1\. Ta8#/)).toBeInTheDocument();
+    expect(boardMock.props!.lastMove).toEqual(["a1", "a8"]);
     expect(screen.getByRole("button", { name: "Pista" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     expect(onDone).toHaveBeenCalledWith(expect.objectContaining({ failed: true }));

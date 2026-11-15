@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { Lesson } from "@/components/Lesson";
+import { createIndexedDbStore } from "@/lib/progress/store";
 import { fetchBundle, type BundleItem } from "@/lib/content/bundle-client";
 
-type Loaded = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; item: BundleItem | null };
+type Loaded = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; item: BundleItem | null; titles: Record<string, string>; introduced: Record<string, string> };
 
 export default function LearnPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -14,9 +15,18 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
 
   useEffect(() => {
     let cancelled = false;
-    fetchBundle()
-      .then((b) => {
-        if (!cancelled) setLoaded({ status: "ok", item: b.items.find((i) => i.id === id) ?? null });
+    Promise.all([
+      fetchBundle(),
+      createIndexedDbStore()
+        .load()
+        .then((p) => p.introduced)
+        .catch((): Record<string, string> => ({})),
+    ])
+      .then(([b, introduced]) => {
+        const titles = Object.fromEntries(b.items.map((i) => [i.id, i.title]));
+        if (!cancelled) {
+          setLoaded({ status: "ok", item: b.items.find((i) => i.id === id) ?? null, titles, introduced });
+        }
       })
       .catch((e: unknown) => {
         if (!cancelled) setLoaded({ status: "error", message: e instanceof Error ? e.message : "Error al cargar." });
@@ -32,7 +42,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
       {loaded.status === "error" && <p>{loaded.message}</p>}
       {loaded.status === "ok" &&
         (loaded.item ? (
-          <Lesson item={loaded.item} onContinue={() => router.push("/")} />
+          <Lesson item={loaded.item} titles={loaded.titles} introduced={loaded.introduced} onContinue={() => router.push("/")} />
         ) : (
           <p>No encontrado</p>
         ))}

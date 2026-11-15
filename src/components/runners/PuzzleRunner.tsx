@@ -2,9 +2,13 @@
 
 import { useState } from "react";
 import { Board } from "@/components/Board";
-import { applyUciFen } from "./chess-utils";
+import { playUciLine } from "./chess-utils";
 import { hint, playPuzzleMove, startPuzzle, type PuzzleState } from "@/lib/exercises/puzzle";
+import { formatMoveList } from "@/lib/notation";
 import type { Attempt } from "@/lib/srs/cards";
+
+// 0-based ply parity from the fen side to move (only parity matters for numbering).
+const plyOf = (fen: string) => (fen.split(" ")[1] === "w" ? 0 : 1);
 
 type Props = {
   fen: string;
@@ -24,6 +28,7 @@ export function PuzzleRunner({ fen, moves, themes, opponentFirst, onDone, now = 
   const [message, setMessage] = useState("Encuentra la mejor jugada.");
   const [lastMove, setLastMove] = useState<[string, string] | undefined>();
   const [gaveUp, setGaveUp] = useState(false);
+  const [solutionText, setSolutionText] = useState("");
 
   const seconds = () => Math.max(0, (now() - startedAt) / 1000);
 
@@ -61,9 +66,12 @@ export function PuzzleRunner({ fen, moves, themes, opponentFirst, onDone, now = 
   }
 
   function showSolution() {
-    let f = state.fen;
-    for (let i = state.index; i < moves.length; i++) f = applyUciFen(f, moves[i]);
-    setBoardFen(f);
+    const rest = moves.slice(state.index);
+    const line = playUciLine(state.fen, rest);
+    const last = rest[rest.length - 1];
+    setBoardFen(line.fen);
+    if (last) setLastMove([last.slice(0, 2), last.slice(2, 4)]);
+    setSolutionText(formatMoveList(line.sans, plyOf(state.fen)));
     setGaveUp(true);
     setState({ ...state, done: true, solved: false });
     setMessage("Esta era la solución.");
@@ -85,6 +93,7 @@ export function PuzzleRunner({ fen, moves, themes, opponentFirst, onDone, now = 
       <p role="status" className="text-center text-lg">
         {message}
       </p>
+      {solutionText && <p className="text-center">Solución: {solutionText}</p>}
       <div className="flex justify-center gap-3">
         <button
           type="button"
