@@ -14,7 +14,10 @@ const pick = (text: string) =>
     fireEvent.change(input, { target: { files: [file] } });
   });
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe("Ajustes", () => {
   it("exports a backup named after today's date", async () => {
@@ -22,19 +25,31 @@ describe("Ajustes", () => {
     render(<SettingsPage />);
     const button = await screen.findByRole("button", { name: "Exportar respaldo" });
     const created: HTMLAnchorElement[] = [];
+    const inBodyAtClick: boolean[] = [];
     const realCreate = document.createElement.bind(document);
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       const el = realCreate(tag);
       if (tag === "a") {
         created.push(el as HTMLAnchorElement);
-        vi.spyOn(el as HTMLAnchorElement, "click").mockImplementation(() => {});
+        vi.spyOn(el as HTMLAnchorElement, "click").mockImplementation(() => {
+          inBodyAtClick.push(document.body.contains(el));
+        });
       }
       return el;
     });
     URL.createObjectURL = vi.fn(() => "blob:x");
-    URL.revokeObjectURL = vi.fn();
+    const revoke = vi.fn();
+    URL.revokeObjectURL = revoke;
+    vi.useFakeTimers({ toFake: ["setTimeout"] });
     await act(async () => fireEvent.click(button));
     expect(created[0].download).toMatch(/^\d{4}-\d{2}-\d{2}\.ajedrez-respaldo\.json$/);
+    // Some browsers only download from an anchor in the document.
+    expect(inBodyAtClick).toEqual([true]);
+    expect(document.body.contains(created[0])).toBe(false);
+    // Revoking right away can cancel the download.
+    expect(revoke).not.toHaveBeenCalled();
+    vi.runAllTimers();
+    expect(revoke).toHaveBeenCalledWith("blob:x");
   });
 
   it("asks for confirmation and shows the Spanish error for an invalid backup", async () => {

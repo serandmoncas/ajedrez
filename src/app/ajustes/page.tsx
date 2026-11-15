@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ChangeEvent } from "react";
 import { PrivateModeNotice } from "@/components/PrivateModeNotice";
+import { userMessage } from "@/lib/errors";
 import { openStore, type OpenedStore } from "@/lib/progress/open-store";
 
 /** Local date as AAAA-MM-DD. */
@@ -26,13 +27,21 @@ export default function SettingsPage() {
 
   async function exportBackup() {
     if (!opened) return;
-    const blob = new Blob([await opened.store.exportJson()], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${today()}.ajedrez-respaldo.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([await opened.store.exportJson()], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${today()}.ajedrez-respaldo.json`;
+      // Some browsers only download from an anchor attached to the document, and revoking
+      // the URL right away can cancel the download.
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      setMessage("No se pudo exportar el respaldo.");
+    }
   }
 
   async function importBackup(e: ChangeEvent<HTMLInputElement>) {
@@ -44,7 +53,7 @@ export default function SettingsPage() {
       await opened.store.importJson(await file.text());
       setMessage("Respaldo importado.");
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "No se pudo importar el respaldo.");
+      setMessage(userMessage(err, "No se pudo importar el respaldo."));
     }
   }
 

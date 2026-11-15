@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fetchBundle, type Bundle } from "@/lib/content/bundle-client";
+import { userMessage } from "@/lib/errors";
 import { openStore } from "@/lib/progress/open-store";
 import type { ProgressStore } from "@/lib/progress/store";
 
@@ -20,7 +21,7 @@ export function useAppData(): AppData {
         if (!cancelled) setData({ status: "ok", bundle, store, persistent });
       })
       .catch((e: unknown) => {
-        if (!cancelled) setData({ status: "error", message: e instanceof Error ? e.message : "Error al cargar." });
+        if (!cancelled) setData({ status: "error", message: userMessage(e, "No se pudo cargar la app. Inténtalo de nuevo.") });
       });
     return () => {
       cancelled = true;

@@ -1,4 +1,5 @@
 import { openDB, type IDBPDatabase } from "idb";
+import { UserFacingError } from "../errors";
 import { emptyProgress, progressSchema, type Progress } from "./types";
 
 export interface ProgressStore {
@@ -17,7 +18,7 @@ function parseBackup(json: string): Progress {
   try {
     raw = JSON.parse(json);
   } catch {
-    throw new Error("El respaldo no es válido");
+    throw new UserFacingError("El respaldo no es válido");
   }
   if (
     typeof raw === "object" &&
@@ -25,12 +26,12 @@ function parseBackup(json: string): Progress {
     "schemaVersion" in raw &&
     raw.schemaVersion !== 1
   ) {
-    throw new Error(
+    throw new UserFacingError(
       `El respaldo no es válido: versión ${String(raw.schemaVersion)} no compatible`,
     );
   }
   const parsed = progressSchema.safeParse(raw);
-  if (!parsed.success) throw new Error("El respaldo no es válido");
+  if (!parsed.success) throw new UserFacingError("El respaldo no es válido");
   return parsed.data;
 }
 

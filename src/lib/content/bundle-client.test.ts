@@ -11,3 +11,13 @@ describe("BundleItem", () => {
     expect(typeof read).toBe("function");
   });
 });
+
+describe("fetchBundle", () => {
+  it("turns a network failure into a Spanish message", async () => {
+    const { fetchBundle } = await import("./bundle-client");
+    const { vi } = await import("vitest");
+    vi.stubGlobal("fetch", vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))));
+    await expect(fetchBundle()).rejects.toThrow("No se pudo cargar el contenido. Revisa tu conexión.");
+    vi.unstubAllGlobals();
+  });
+});

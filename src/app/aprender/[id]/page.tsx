@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import { Lesson } from "@/components/Lesson";
 import { createIndexedDbStore } from "@/lib/progress/store";
 import { fetchBundle, type BundleItem } from "@/lib/content/bundle-client";
+import { userMessage } from "@/lib/errors";
 
 type Loaded = { status: "loading" } | { status: "error"; message: string } | { status: "ok"; item: BundleItem | null; titles: Record<string, string>; introduced: Record<string, string> };
 
@@ -29,7 +30,7 @@ export default function LearnPage({ params }: { params: Promise<{ id: string }> 
         }
       })
       .catch((e: unknown) => {
-        if (!cancelled) setLoaded({ status: "error", message: e instanceof Error ? e.message : "Error al cargar." });
+        if (!cancelled) setLoaded({ status: "error", message: userMessage(e, "No se pudo cargar esta lección. Inténtalo de nuevo.") });
       });
     return () => {
       cancelled = true;

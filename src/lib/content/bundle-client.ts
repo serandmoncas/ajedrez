@@ -1,6 +1,7 @@
 // Browser-safe bundle types and client fetch (no Node imports).
 import type { ContentItem } from "./schema";
 import type { Puzzle } from "./puzzle";
+import { UserFacingError } from "../errors";
 
 /** Distributes over the ContentItem union so narrowing by `kind` exposes kind-specific fields. */
 export type BundleItem = ContentItem extends infer T
@@ -16,10 +17,21 @@ export type Bundle = {
   puzzles: Record<string, BundlePuzzle[]>;
 };
 
+const OFFLINE = "No se pudo cargar el contenido. Revisa tu conexión.";
+
 export async function fetchBundle(): Promise<Bundle> {
-  const res = await fetch("/content/bundle.json");
-  if (!res.ok) {
-    throw new Error(`No se pudo cargar el contenido (HTTP ${res.status}).`);
+  let res: Response;
+  try {
+    res = await fetch("/content/bundle.json");
+  } catch {
+    throw new UserFacingError(OFFLINE);
   }
-  return (await res.json()) as Bundle;
+  if (!res.ok) {
+    throw new UserFacingError(`No se pudo cargar el contenido (HTTP ${res.status}).`);
+  }
+  try {
+    return (await res.json()) as Bundle;
+  } catch {
+    throw new UserFacingError(OFFLINE);
+  }
 }

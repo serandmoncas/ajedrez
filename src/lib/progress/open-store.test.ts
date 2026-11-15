@@ -18,3 +18,15 @@ describe("openStore", () => {
     expect((await store.load()).introduced).toHaveProperty("x");
   });
 });
+
+describe("openStore persistence", () => {
+  it("asks the browser to keep the data when IndexedDB opens, ignoring failures", async () => {
+    const { vi } = await import("vitest");
+    const persist = vi.fn(() => Promise.reject(new Error("no")));
+    vi.stubGlobal("navigator", { ...navigator, storage: { persist } });
+    const { persistent } = await openStore();
+    expect(persistent).toBe(true);
+    expect(persist).toHaveBeenCalledTimes(1);
+    vi.unstubAllGlobals();
+  });
+});
