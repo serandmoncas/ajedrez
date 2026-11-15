@@ -77,7 +77,11 @@ function validCardIds(bundle: Bundle): Set<CardId> {
 type Review = { step: ReviewStep; minutes: number };
 
 /** Due review steps, most overdue first. */
-function reviewSteps(bundle: Bundle, p: Progress, now: Date): Review[] {
+function reviewSteps(
+  bundle: Bundle,
+  p: Progress,
+  now: Date,
+): { reviews: Review[]; used: Set<string> } {
   const themed = bundle.items.filter(
     (i): i is Themed => i.kind === "pattern" || i.kind === "technique",
   );
@@ -88,15 +92,26 @@ function reviewSteps(bundle: Bundle, p: Progress, now: Date): Review[] {
   }
   const orderedThemed = [...themed].sort(byOrder);
 
+  const due = dueCards(p, now, validCardIds(bundle));
+  // Puzzle ids already in the session; seeded with the due `puzzle:` cards so a pattern
+  // card never serves a puzzle that is reviewed on its own.
+  const used = new Set<string>();
+  for (const { id } of due) {
+    if (id.startsWith("puzzle:") && puzzleById.has(id.slice(7)))
+      used.add(id.slice(7));
+  }
+
   const out: Review[] = [];
-  for (const { id } of dueCards(p, now, validCardIds(bundle))) {
+  for (const { id } of due) {
     const [kind, rest] = [
       id.slice(0, id.indexOf(":")),
       id.slice(id.indexOf(":") + 1),
     ];
     if (kind === "pattern") {
-      const puzzle = nextPuzzleForPattern(p, pools.get(rest) ?? [], now);
-      if (!puzzle) continue;
+      const pool = (pools.get(rest) ?? []).filter((z) => !used.has(z.id));
+      const puzzle = nextPuzzleForPattern(p, pool, now);
+      if (!puzzle) continue; // stays due for the next session
+      used.add(puzzle.id);
       out.push({
         step: { block: "review", card: id, patternId: rest, puzzle },
         minutes: MINUTES.reviewStep,
@@ -128,7 +143,7 @@ function reviewSteps(bundle: Bundle, p: Progress, now: Date): Review[] {
       });
     }
   }
-  return out;
+  return { reviews: out, used };
 }
 
 /** Keeps the most overdue reviews that fit in `limit` minutes (order preserved). */
@@ -148,13 +163,18 @@ const sum = (rs: Review[]) => rs.reduce((t, r) => t + r.minutes, 0);
 type Block = { steps: SessionStep[]; minutes: number };
 
 /** New pattern block with up to `maxPuzzles` practice puzzles; null if nothing to teach. */
-function patternBlock(bundle: Bundle, p: Progress, now: Date) {
+function patternBlock(
+  bundle: Bundle,
+  p: Progress,
+  now: Date,
+  used: Set<string>,
+) {
   const next = bundle.items
     .filter((i): i is Themed => i.kind === "pattern" || i.kind === "technique")
     .sort(byOrder)
     .find((i) => !(i.id in p.introduced));
   if (!next) return null;
-  const pool = puzzlePool(bundle, next);
+  const pool = puzzlePool(bundle, next).filter((z) => !used.has(z.id));
   return (maxPuzzles: number): Block => {
     const steps: SessionStep[] = [
       { block: "pattern", item: "intro", contentId: next.id },
@@ -236,7 +256,7 @@ export function buildSession(
   now: Date,
   opts: { extra?: boolean; allowNew?: boolean } = {},
 ): SessionPlan {
-  const reviews = reviewSteps(bundle, p, now);
+  const { reviews, used } = reviewSteps(bundle, p, now);
   const reviewOnly = (list: Review[]): SessionPlan => ({
     steps: list.map((r) => r.step),
     estimatedMinutes: sum(list),
@@ -248,7 +268,7 @@ export function buildSession(
     return reviewOnly(fitReviews(reviews, SESSION_CAP_MINUTES));
   }
 
-  const pattern = patternBlock(bundle, p, now);
+  const pattern = patternBlock(bundle, p, now, used);
   const opening = openingBlock(bundle, p);
   const game = gameBlock(bundle, p);
 

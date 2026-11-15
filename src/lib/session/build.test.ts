@@ -5,7 +5,7 @@ import type {
   BundlePuzzle,
 } from "../content/bundle-client";
 import { emptyProgress, type Progress } from "../progress/types";
-import { buildSession } from "./build";
+import { buildSession, type SessionStep } from "./build";
 
 const now = new Date("2026-11-15T10:00:00.000Z");
 const DAY = 86_400_000;
@@ -58,6 +58,8 @@ function withDue(p: Progress, id: string, daysOverdue: number): Progress {
   return p;
 }
 
+const puzzleIds = (steps: SessionStep[]) =>
+  steps.flatMap((s) => ("puzzle" in s && s.puzzle ? [s.puzzle.id] : []));
 const blocksOf = (steps: { block: string }[]) =>
   new Set(steps.map((s) => s.block));
 const allIntroduced = (p: Progress): Progress => {
@@ -232,7 +234,9 @@ describe("buildSession", () => {
       "c1",
     );
     expect(plan.steps[1]).toMatchObject({ card: "puzzle:y1", patternId: "p2" });
-    expect(plan.steps[2]).toMatchObject({ card: "pattern:p2" });
+    // pattern:p2's only puzzle (y1) is already used by its due puzzle card: step skipped
+    expect(plan.steps.filter((x) => x.block === "review")).toHaveLength(2);
+    expect(puzzleIds(plan.steps)).toEqual(["c1", "y1"]);
   });
 
   it("line cards cost 1.5 minutes", () => {
@@ -243,5 +247,27 @@ describe("buildSession", () => {
     };
     withDue(p, "line:o1/a", 1);
     expect(buildSession(makeBundle(), p, now).estimatedMinutes).toBe(1.5);
+  });
+  it("two due pattern cards sharing a theme get different puzzles", () => {
+    const bundle = makeBundle();
+    bundle.items.push(
+      item({ kind: "pattern", id: "p3", order: 3, themes: ["t1"] }),
+    );
+    const p = allIntroduced(emptyProgress(now));
+    p.introduced.p3 = now.toISOString();
+    withDue(p, "pattern:p1", 5);
+    withDue(p, "pattern:p3", 4);
+    const ids = puzzleIds(buildSession(bundle, p, now).steps);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it("new-pattern block excludes puzzles already used by due reviews", () => {
+    const p = emptyProgress(now);
+    withDue(p, "puzzle:z1", 3);
+    withDue(p, "pattern:p2", 2); // p2 not introduced is irrelevant: card is due
+    const ids = puzzleIds(buildSession(makeBundle(), p, now).steps);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.filter((i) => i === "z1")).toHaveLength(1);
   });
 });
