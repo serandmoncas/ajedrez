@@ -91,10 +91,15 @@ export function selectPuzzles(
   const { perTheme } = { ...DEFAULTS, ...opts };
   const wanted = new Set(themes);
   const pool: Record<string, PuzzleRow[]> = Object.fromEntries(themes.map((t) => [t, []]));
+  const seen = new Set<string>(); // "<theme>\0<id>": the same puzzle may arrive more than once
   for (const row of rows) {
     if (!row) continue;
     if (!matchesFilters(row, opts)) continue;
-    for (const t of row.themes) if (wanted.has(t)) pool[t].push(row);
+    for (const t of row.themes) {
+      if (!wanted.has(t) || seen.has(`${t}\0${row.id}`)) continue;
+      seen.add(`${t}\0${row.id}`);
+      pool[t].push(row);
+    }
   }
   return Object.fromEntries(
     themes.map((t) => [t, spread(pool[t], perTheme).map(toPuzzle)]),

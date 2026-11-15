@@ -43,7 +43,7 @@ async function main() {
       else if (bucket.length < DEFAULTS.perTheme) bucket.push(row);
     }
   }
-  const kept = [...buckets.values()].flat();
+  const kept = [...new Set([...buckets.values()].flat())]; // a row sits in one bucket per matched theme
 
   await mkdir(OUT_DIR, { recursive: true });
   const allThemes = [...seenThemes].sort();

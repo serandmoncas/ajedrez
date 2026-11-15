@@ -70,3 +70,15 @@ describe("matchesFilters", () => {
     expect(matchesFilters({ ...base, rating: 1000 }, { min: 1100 })).toBe(false);
   });
 });
+
+describe("selectPuzzles duplicates", () => {
+  it("lists a row once per theme even when it is passed twice", () => {
+    const row: PuzzleRow = {
+      id: "dup", fen: "f", moves: ["a1a2", "a2a3"], themes: ["fork", "pin"],
+      rating: 900, popularity: 90, nbPlays: 900,
+    };
+    const out = selectPuzzles([row, row], ["fork", "pin"]);
+    expect(out.fork.map((p) => p.id)).toEqual(["dup"]);
+    expect(out.pin.map((p) => p.id)).toEqual(["dup"]);
+  });
+});
