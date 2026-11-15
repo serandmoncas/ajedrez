@@ -9,3 +9,4 @@ data/raw/
 *.ajedrez-respaldo.json
 .env*
 !.env.example
+public/content/

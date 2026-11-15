@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "content:check": "tsx scripts/build-content.ts",
+    "content:check": "tsx scripts/build-content.ts --check",
     "engine:check": "tsx scripts/engine-check.ts",
     "puzzles:import": "tsx scripts/import-puzzles.ts"
   },
