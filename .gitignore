@@ -10,3 +10,4 @@ data/raw/
 .env*
 !.env.example
 public/content/
+.vercel

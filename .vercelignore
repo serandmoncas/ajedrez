@@ -1,0 +1,7 @@
+data/raw/
+node_modules/
+.next/
+.superpowers/
+public/content/
+*.ajedrez-respaldo.json
+.env*
