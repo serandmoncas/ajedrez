@@ -1,0 +1,92 @@
+[
+  {
+    "claimId": "dxe5-error",
+    "fen": "rn1qkbnr/ppp2ppp/3p4/4P3/4P1b1/5N2/PPP2PPP/RNBQKB1R b KQkq - 0 4",
+    "depth": 22,
+    "bestMove": "b8c6",
+    "evalCp": -110,
+    "move": "dxe5",
+    "moveEvalCp": -313
+  },
+  {
+    "claimId": "cf6-error",
+    "fen": "rn1qkbnr/ppp2ppp/8/4p3/2B1P3/5Q2/PPP2PPP/RNB1K2R b KQkq - 1 6",
+    "depth": 22,
+    "bestMove": "d8f6",
+    "evalCp": -113,
+    "move": "Nf6",
+    "moveEvalCp": -304
+  },
+  {
+    "claimId": "df6-mejor",
+    "fen": "rn1qkbnr/ppp2ppp/8/4p3/2B1P3/5Q2/PPP2PPP/RNB1K2R b KQkq - 1 6",
+    "depth": 22,
+    "bestMove": "d8f6",
+    "evalCp": -113,
+    "move": "Qf6",
+    "moveEvalCp": -121
+  },
+  {
+    "claimId": "db3-mejor",
+    "fen": "rn1qkb1r/ppp2ppp/5n2/4p3/2B1P3/5Q2/PPP2PPP/RNB1K2R w KQkq - 2 7",
+    "depth": 22,
+    "bestMove": "f3b3",
+    "evalCp": 320,
+    "move": "Qb3",
+    "moveEvalCp": 287
+  },
+  {
+    "claimId": "cc3-gana",
+    "fen": "rn2kb1r/ppp1qppp/5n2/4p3/2B1P3/1Q6/PPP2PPP/RNB1K2R w KQkq - 4 8",
+    "depth": 22,
+    "bestMove": "b3b7",
+    "evalCp": 293,
+    "move": "Nc3",
+    "moveEvalCp": 260
+  },
+  {
+    "claimId": "dxb7-gana",
+    "fen": "rn2kb1r/ppp1qppp/5n2/4p3/2B1P3/1Q6/PPP2PPP/RNB1K2R w KQkq - 4 8",
+    "depth": 22,
+    "bestMove": "b3b7",
+    "evalCp": 293,
+    "move": "Qxb7",
+    "moveEvalCp": 296
+  },
+  {
+    "claimId": "b5-error",
+    "fen": "rn2kb1r/pp2qppp/2p2n2/4p1B1/2B1P3/1QN5/PPP2PPP/R3K2R b KQkq - 1 9",
+    "depth": 22,
+    "bestMove": "b8a6",
+    "evalCp": -255,
+    "move": "b5",
+    "moveEvalCp": -459
+  },
+  {
+    "claimId": "cxb5-gana",
+    "fen": "rn2kb1r/p3qppp/2p2n2/1p2p1B1/2B1P3/1QN5/PPP2PPP/R3K2R w KQkq - 0 10",
+    "depth": 22,
+    "bestMove": "c3b5",
+    "evalCp": 474,
+    "move": "Nxb5",
+    "moveEvalCp": 422
+  },
+  {
+    "claimId": "txd7-gana",
+    "fen": "3rkb1r/p2nqppp/5n2/1B2p1B1/4P3/1Q6/PPP2PPP/2KR3R w k - 3 13",
+    "depth": 22,
+    "bestMove": "d1d7",
+    "evalCp": 747,
+    "move": "Rxd7",
+    "moveEvalCp": 727
+  },
+  {
+    "claimId": "db8-gana",
+    "fen": "4kb1r/p2n1ppp/4q3/4p1B1/4P3/1Q6/PPP2PPP/2KR4 w k - 0 16",
+    "depth": 22,
+    "bestMove": "b3b8",
+    "mateIn": 2,
+    "move": "Qb8+",
+    "moveMateIn": 1
+  }
+]

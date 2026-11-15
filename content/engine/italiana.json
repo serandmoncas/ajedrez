@@ -1,0 +1,79 @@
+[
+  {
+    "claimId": "clasica-iguala",
+    "fen": "r1bqk2r/ppp2ppp/2n2n2/3p4/2BPP3/5N2/PP1N1PPP/R2QK2R w KQkq - 0 9",
+    "depth": 22,
+    "bestMove": "e4d5",
+    "evalCp": 7
+  },
+  {
+    "claimId": "clasica-jaque-es-la-mejor",
+    "fen": "r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq - 0 6",
+    "depth": 22,
+    "bestMove": "c5b4",
+    "evalCp": 1,
+    "move": "Bb4+",
+    "moveEvalCp": 0
+  },
+  {
+    "claimId": "clasica-ab6-error",
+    "fen": "r1bqk2r/pppp1ppp/2n2n2/2b5/2BPP3/5N2/PP3PPP/RNBQK2R b KQkq - 0 6",
+    "depth": 22,
+    "bestMove": "c5b4",
+    "evalCp": 1,
+    "move": "Bb6",
+    "moveEvalCp": -202
+  },
+  {
+    "claimId": "pianissimo-iguala",
+    "fen": "r1bq1rk1/ppp2ppp/2np1n2/2b1p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 w - - 2 7",
+    "depth": 22,
+    "bestMove": "b1d2",
+    "evalCp": 13
+  },
+  {
+    "claimId": "trampa-cxe5-error",
+    "fen": "r1bqkbnr/pppp1ppp/8/4p3/2BnP3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+    "depth": 22,
+    "bestMove": "f3d4",
+    "evalCp": 130,
+    "move": "Nxe5",
+    "moveEvalCp": -96
+  },
+  {
+    "claimId": "trampa-cxd4-mejor",
+    "fen": "r1bqkbnr/pppp1ppp/8/4p3/2BnP3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+    "depth": 22,
+    "bestMove": "f3d4",
+    "evalCp": 130,
+    "move": "Nxd4",
+    "moveEvalCp": 128
+  },
+  {
+    "claimId": "trampa-enroque-bueno",
+    "fen": "r1bqkbnr/pppp1ppp/8/4p3/2BnP3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",
+    "depth": 22,
+    "bestMove": "f3d4",
+    "evalCp": 130,
+    "move": "O-O",
+    "moveEvalCp": 101
+  },
+  {
+    "claimId": "trampa-cxf7-error",
+    "fen": "r1b1kbnr/pppp1ppp/8/4N1q1/2BnP3/8/PPPP1PPP/RNBQK2R w KQkq - 1 5",
+    "depth": 22,
+    "bestMove": "c4f7",
+    "evalCp": -69,
+    "move": "Nxf7",
+    "moveEvalCp": -670
+  },
+  {
+    "claimId": "trampa-axf7-mejor",
+    "fen": "r1b1kbnr/pppp1ppp/8/4N1q1/2BnP3/8/PPPP1PPP/RNBQK2R w KQkq - 1 5",
+    "depth": 22,
+    "bestMove": "c4f7",
+    "evalCp": -69,
+    "move": "Bxf7+",
+    "moveEvalCp": -55
+  }
+]
