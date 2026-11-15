@@ -13,6 +13,17 @@ export default function Home() {
       >
         Empezar sesión
       </Link>
+      <nav className="flex justify-center gap-6">
+        <Link href="/capacidades" className="underline">
+          Capacidades
+        </Link>
+        <Link href="/ajustes" className="underline">
+          Ajustes
+        </Link>
+        <Link href="/creditos" className="underline">
+          Créditos
+        </Link>
+      </nav>
     </main>
   );
 }

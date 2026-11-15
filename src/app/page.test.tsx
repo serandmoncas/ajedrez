@@ -11,4 +11,11 @@ describe("Home", () => {
       "/sesion",
     );
   });
+
+  it("links to capacidades, ajustes and créditos", () => {
+    render(<Home />);
+    for (const [name, href] of [["Capacidades", "/capacidades"], ["Ajustes", "/ajustes"], ["Créditos", "/creditos"]]) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
+    }
+  });
 });
