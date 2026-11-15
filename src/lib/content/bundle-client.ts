@@ -2,7 +2,12 @@
 import type { ContentItem } from "./schema";
 import type { Puzzle } from "./puzzle";
 
-export type BundleItem = Omit<ContentItem, "body" | "claims"> & { html: string };
+/** Distributes over the ContentItem union so narrowing by `kind` exposes kind-specific fields. */
+export type BundleItem = ContentItem extends infer T
+  ? T extends ContentItem
+    ? Omit<T, "body" | "claims"> & { html: string }
+    : never
+  : never;
 /** opponentFirst: true when moves[0] is the opponent's move (Lichess); false for custom positions. */
 export type BundlePuzzle = Puzzle & { opponentFirst: boolean };
 export type Bundle = {
