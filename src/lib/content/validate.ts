@@ -214,6 +214,15 @@ function checkGame(item: Game, ctx: ValidationContext, out: Issue[]) {
       });
       continue;
     }
+    // Only the guessing side's plies are guessed, so an alternative elsewhere is never shown.
+    if ((item.side === "w") !== (ply % 2 === 1)) {
+      out.push({
+        itemId: item.id,
+        rule: "comment-wrong-side",
+        message: `La alternativa en la media jugada ${key} es del bando que no adivina: nunca se mostraría.`,
+      });
+      continue;
+    }
     if (legal < ply - 1) continue; // game itself is broken before here; already reported
     for (const alt of alts) {
       const chess = new Chess();

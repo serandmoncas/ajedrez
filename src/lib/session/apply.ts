@@ -4,7 +4,7 @@ import type { Puzzle } from "../content/puzzle";
 import type { Progress } from "../progress/types";
 import { gradeAttempt, recordPuzzle, reviewCard, type Attempt, type CardId } from "../srs/cards";
 import { updateRating } from "../srs/rating";
-import { puzzlePool, type SessionStep } from "./build";
+import type { SessionStep } from "./build";
 
 export type GuessCounts = { full: number; partial: number; miss: number };
 
@@ -22,8 +22,24 @@ function rate(p: Progress, puzzle: Puzzle, a: Attempt, now: Date): Progress {
   if (!(puzzle.rating > 0)) return p;
   const solved = a.firstTry && !a.usedHint && !a.failed;
   const { r, rd } = updateRating(p.rating, puzzle.rating, solved);
-  return { ...p, rating: { r, rd, updatedAt: now.toISOString() } };
+  const ratedCount = (p.rating.ratedCount ?? 0) + 1;
+  return { ...p, rating: { r, rd, updatedAt: now.toISOString(), ratedCount } };
 }
+
+/** Local calendar date as YYYY-MM-DD. */
+export function localDate(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** Marks today's daily session as completed. */
+export const completeDailySession = (p: Progress, now: Date): Progress => ({
+  ...p,
+  lastDailySession: localDate(now),
+});
+
+/** True when the daily session was already completed on `now`'s local date. */
+export const dailySessionDone = (p: Progress, now: Date): boolean => p.lastDailySession === localDate(now);
 
 function reviewStep(
   p: Progress,
@@ -42,24 +58,11 @@ function reviewStep(
   if (card.startsWith("puzzle:")) {
     if (!puzzle) return p;
     // Not recordPuzzle: it would add a second Again review to this same card on failure.
+    // Not rated either: a repeated puzzle says little about strength.
     const next = reviewCard(p, card, grade, now);
-    const seen = { ...next, seenPuzzles: { ...next.seenPuzzles, [puzzle.id]: now.toISOString() } };
-    return rate(seen, puzzle, a, now);
+    return { ...next, seenPuzzles: { ...next.seenPuzzles, [puzzle.id]: now.toISOString() } };
   }
   return reviewCard(p, card, grade, now); // combo: and line:
-}
-
-/**
- * Marks the pattern introduced. With no puzzles at all (no theme puzzles, no custom
- * positions) no practice puzzle will ever create its card, so it is created here (Good).
- */
-function introducePattern(p: Progress, bundle: Bundle, id: string, now: Date): Progress {
-  const next = introduce(p, id, now);
-  const item = bundle.items.find((i) => i.id === id);
-  if (!item || (item.kind !== "pattern" && item.kind !== "technique")) return next;
-  const card: CardId = `pattern:${id}`;
-  if (card in next.cards || puzzlePool(bundle, item).length > 0) return next;
-  return reviewCard(next, card, Rating.Good, now);
 }
 
 /** Combination ids linked to the game from either side, limited to combinations in the bundle. */
@@ -122,7 +125,8 @@ export function applyStepResult(
     case "review":
       return result.kind === "attempt" ? reviewStep(p, step, result.attempt, now) : p;
     case "pattern": {
-      if (step.item === "intro") return introducePattern(p, bundle, step.contentId, now);
+      // An item with an empty pool is just introduced: no card, since it could never be reviewed.
+      if (step.item === "intro") return introduce(p, step.contentId, now);
       if (result.kind !== "attempt" || !step.puzzle) return p;
       const a = result.attempt;
       const card: CardId = `pattern:${step.contentId}`;

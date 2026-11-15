@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Bundle, BundleItem, BundlePuzzle } from "../content/bundle-client";
 import { emptyProgress, type Progress } from "../progress/types";
 import { gradeAttempt, reviewCard, type Attempt } from "../srs/cards";
-import { applyStepResult } from "./apply";
+import { applyStepResult, completeDailySession, dailySessionDone, localDate } from "./apply";
 
 const now = new Date("2026-11-15T10:00:00.000Z");
 const iso = now.toISOString();
@@ -184,14 +184,45 @@ describe("applyStepResult", () => {
     expect(p).toEqual(snapshot);
   });
 
-  it("pattern intro with an empty pool creates the card right away (Good)", () => {
+  it("pattern intro with an empty pool only introduces it (no never-reviewable card)", () => {
     const b: Bundle = {
       ...bundle,
       items: [...bundle.items, item({ kind: "technique", id: "p9", order: 9, themes: ["none"] })],
     };
     const p = applyStepResult(fresh(), b, { block: "pattern", item: "intro", contentId: "p9" }, { kind: "seen" }, now);
     expect(p.introduced).toEqual({ p9: iso });
-    sameCard(p, "pattern:p9", reviewCard(fresh(), "pattern:p9", Rating.Good, now));
+    expect(p.cards).toEqual({});
+  });
+
+  it("review puzzle card (a repeat) does not change the rating", () => {
+    const p = applyStepResult(
+      fresh(),
+      bundle,
+      { block: "review", card: "puzzle:z1", patternId: "p1", puzzle: pz("z1", 900) },
+      attempt(clean),
+      now,
+    );
+    expect(p.rating).toEqual(fresh().rating);
+  });
+
+  it("counts rated puzzles in rating.ratedCount", () => {
+    const step = { block: "review" as const, card: "pattern:p1" as const, patternId: "p1", puzzle: pz("z1", 900) };
+    const one = applyStepResult(fresh(), bundle, step, attempt(clean), now);
+    expect(one.rating.ratedCount).toBe(1);
+    const two = applyStepResult(one, bundle, step, attempt(failed), now);
+    expect(two.rating.ratedCount).toBe(2);
+    const unrated = applyStepResult(fresh(), bundle, { ...step, puzzle: pz("z0", 0) }, attempt(clean), now);
+    expect(unrated.rating.ratedCount).toBeUndefined();
+  });
+
+  it("daily session: local date, completion mark and check", () => {
+    const local = new Date(2026, 10, 15, 23, 30); // local time, late evening
+    expect(localDate(local)).toBe("2026-11-15");
+    const p = completeDailySession(fresh(), local);
+    expect(p.lastDailySession).toBe("2026-11-15");
+    expect(dailySessionDone(p, new Date(2026, 10, 15, 8, 0))).toBe(true);
+    expect(dailySessionDone(p, new Date(2026, 10, 16, 0, 5))).toBe(false);
+    expect(dailySessionDone(fresh(), local)).toBe(false);
   });
 
   it("pattern intro counts custom positions as part of the pool", () => {

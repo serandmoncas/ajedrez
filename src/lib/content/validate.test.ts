@@ -165,12 +165,22 @@ describe("validateBundle", () => {
     const ok = game({ alternatives: { "1": [{ san: "e4", comment: "c" }] } });
     expect(rules([ok])).toEqual([]);
     // ply 2 is black's move: "e4" is not legal for black there (pawn on e4 is white's)
-    const bad = game({ alternatives: { "2": [{ san: "Nf3", comment: "c" }] } });
+    const bad = game({ side: "b", alternatives: { "2": [{ san: "Nf3", comment: "c" }] } });
     expect(rules([bad])).toEqual(["alternative-illegal"]);
     const range = game({ alternatives: { "9": [{ san: "e4", comment: "c" }] } });
     expect(rules([range])).toContain("alternative-illegal");
     // legal for black at ply 2 but only in the position BEFORE moves[1]
-    expect(rules([game({ alternatives: { "2": [{ san: "e6", comment: "c" }] } })])).toEqual([]);
+    expect(rules([game({ side: "b", alternatives: { "2": [{ san: "e6", comment: "c" }] } })])).toEqual([]);
+  });
+
+  it("comment-wrong-side: alternatives on plies of the side that is not guessing", () => {
+    // side w guesses odd plies; ply 2 is black's (auto-played) move, never guessed
+    expect(rules([game({ alternatives: { "2": [{ san: "e6", comment: "c" }] } })])).toEqual(["comment-wrong-side"]);
+    expect(rules([game({ side: "b", alternatives: { "1": [{ san: "e4", comment: "c" }] } })])).toEqual([
+      "comment-wrong-side",
+    ]);
+    // comments on any ply are allowed (auto-played plies show theirs too)
+    expect(rules([game({ side: "b", comments: { "1": "x", "2": "y" } })])).toEqual([]);
   });
 
   it("game comments with an out-of-range ply are flagged", () => {

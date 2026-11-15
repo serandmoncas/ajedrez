@@ -34,7 +34,10 @@ export const progressSchema = z.object({
       done: z.boolean(),
     }),
   ),
-  rating: z.object({ r: z.number(), rd: z.number(), updatedAt: isoDate }),
+  /** Number of rated puzzles that have updated the rating (optional: older backups lack it). */
+  rating: z.object({ r: z.number(), rd: z.number(), updatedAt: isoDate, ratedCount: z.number().int().min(0).optional() }),
+  /** Local date (YYYY-MM-DD) of the last completed daily session (optional: older backups lack it). */
+  lastDailySession: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 export type SerializedCard = z.infer<typeof serializedCardSchema>;

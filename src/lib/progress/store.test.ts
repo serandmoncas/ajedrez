@@ -52,6 +52,16 @@ describe("progress store", () => {
     expect(await b.load()).toEqual(sample());
   });
 
+  it("imports the optional lastDailySession and rating.ratedCount (schema v1 stays compatible)", async () => {
+    const s = fresh();
+    const p = { ...sample(), lastDailySession: "2026-11-15", rating: { ...sample().rating, ratedCount: 7 } };
+    await s.importJson(JSON.stringify(p));
+    expect(await s.load()).toEqual(p);
+    await expect(s.importJson(JSON.stringify({ ...p, lastDailySession: "ayer" }))).rejects.toThrow(
+      "El respaldo no es válido",
+    );
+  });
+
   it("invalid JSON throws a Spanish error and keeps saved data", async () => {
     const s = fresh();
     await s.save(sample());
