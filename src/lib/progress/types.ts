@@ -1,8 +1,13 @@
 import { z } from "zod";
 
+/** ISO date-time string that parses to a real date (rejects "", "banana"). */
+const isoDate = z
+  .string()
+  .refine((s) => !Number.isNaN(Date.parse(s)) && /^\d{4}-\d{2}-\d{2}T/.test(s));
+
 /** ts-fsrs 6 `Card` with Date fields serialized as ISO strings. */
 export const serializedCardSchema = z.object({
-  due: z.string(),
+  due: isoDate,
   stability: z.number(),
   difficulty: z.number(),
   scheduled_days: z.number(),
@@ -10,15 +15,15 @@ export const serializedCardSchema = z.object({
   reps: z.number(),
   lapses: z.number(),
   state: z.number().int().min(0).max(3),
-  last_review: z.string().optional(),
+  last_review: isoDate.optional(),
 });
 
 export const progressSchema = z.object({
   schemaVersion: z.literal(1),
   cards: z.record(z.string(), serializedCardSchema),
-  seenPuzzles: z.record(z.string(), z.string()),
+  seenPuzzles: z.record(z.string(), isoDate),
   patternResults: z.record(z.string(), z.array(z.boolean()).max(10)),
-  introduced: z.record(z.string(), z.string()),
+  introduced: z.record(z.string(), isoDate),
   games: z.record(
     z.string(),
     z.object({
@@ -29,7 +34,7 @@ export const progressSchema = z.object({
       done: z.boolean(),
     }),
   ),
-  rating: z.object({ r: z.number(), rd: z.number(), updatedAt: z.string() }),
+  rating: z.object({ r: z.number(), rd: z.number(), updatedAt: isoDate }),
 });
 
 export type SerializedCard = z.infer<typeof serializedCardSchema>;

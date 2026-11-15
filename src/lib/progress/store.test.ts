@@ -69,6 +69,29 @@ describe("progress store", () => {
     expect(await s.load()).toEqual(sample());
   });
 
+  it.each([
+    ["card due", (p: Progress) => void (p.cards["c1"].due = "banana")],
+    ["card last_review", (p: Progress) => void (p.cards["c1"].last_review = "")],
+    ["seenPuzzles", (p: Progress) => void (p.seenPuzzles["p1"] = "nope")],
+    ["introduced", (p: Progress) => void (p.introduced["x"] = "")],
+    ["rating.updatedAt", (p: Progress) => void (p.rating.updatedAt = "yesterday")],
+  ])("invalid date in %s is rejected without writing", async (_n, mutate) => {
+    const s = fresh();
+    await s.save(sample());
+    const bad = sample();
+    mutate(bad);
+    await expect(s.importJson(JSON.stringify(bad))).rejects.toThrow("El respaldo no es válido");
+    expect(await s.load()).toEqual(sample());
+  });
+
+  it("real toISOString values round-trip through import", async () => {
+    const s = fresh();
+    const p = sample();
+    p.introduced["x"] = new Date(1234567890123).toISOString();
+    await s.importJson(JSON.stringify(p));
+    expect(await s.load()).toEqual(p);
+  });
+
   it("schemaVersion 2 is rejected without writing", async () => {
     const s = fresh();
     await s.save(sample());
