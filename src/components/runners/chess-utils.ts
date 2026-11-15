@@ -47,3 +47,14 @@ export function playUciLine(fen: string, ucis: string[]): { sans: string[]; fen:
   }
   return { sans, fen: current };
 }
+
+/** Plays SAN moves from `fen` (default: start position); returns the final fen and the last move's squares. */
+export function playSanLine(sans: string[], fen?: string): { fen: string; lastMove?: [string, string] } {
+  const chess = fen ? new Chess(fen) : new Chess();
+  let lastMove: [string, string] | undefined;
+  for (const san of sans) {
+    const m = chess.move(san);
+    lastMove = [m.from, m.to];
+  }
+  return { fen: chess.fen(), lastMove };
+}

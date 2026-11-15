@@ -15,19 +15,37 @@ type Props = {
   onDone: (r: Counts) => void;
 };
 
-type State = { fen: string; ply: number; feedback: GuessResult | null; counts: Counts };
+type Squares = [string, string];
+type State = {
+  fen: string;
+  ply: number;
+  feedback: GuessResult | null;
+  counts: Counts;
+  lastMove?: Squares;
+  /** Comment of the last auto-played opponent ply, if any. */
+  autoComment?: string;
+};
 
 // Plies are 1-based; the guessing side plays odd plies when white, even when black.
 const isGuessPly = (game: Game, ply: number) => (game.side === "w") === (ply % 2 === 1);
 
 // Auto-plays the other side's plies until the next guessing ply (or past `to`).
-function advance(game: Game, to: number, fen: string, ply: number): { fen: string; ply: number } {
+function advance(
+  game: Game,
+  to: number,
+  fen: string,
+  ply: number,
+): { fen: string; ply: number; lastMove?: Squares; autoComment?: string } {
   const chess = new Chess(fen);
+  let lastMove: Squares | undefined;
+  let autoComment: string | undefined;
   while (ply <= to && !isGuessPly(game, ply)) {
-    chess.move(game.moves[ply - 1]);
+    const m = chess.move(game.moves[ply - 1]);
+    lastMove = [m.from, m.to];
+    autoComment = game.comments?.[String(ply)];
     ply += 1;
   }
-  return { fen: chess.fen(), ply };
+  return { fen: chess.fen(), ply, lastMove, autoComment };
 }
 
 export function GuessRunner({ game, segment, onDone }: Props) {
@@ -45,12 +63,13 @@ export function GuessRunner({ game, segment, onDone }: Props) {
     if (!san) return;
     const result = scoreGuess(game, state.ply, san);
     const chess = new Chess(state.fen);
-    chess.move(game.moves[state.ply - 1]);
+    const m = chess.move(game.moves[state.ply - 1]);
     setState({
       fen: chess.fen(),
       ply: state.ply + 1,
       feedback: result,
       counts: { ...state.counts, [result.kind]: state.counts[result.kind] + 1 },
+      lastMove: [m.from, m.to],
     });
   }
 
@@ -60,7 +79,7 @@ export function GuessRunner({ game, segment, onDone }: Props) {
       onDone(state.counts);
       return;
     }
-    setState({ ...state, ...adv, feedback: null });
+    setState({ ...state, ...adv, lastMove: adv.lastMove ?? state.lastMove, feedback: null });
   }
 
   const fb = state.feedback;
@@ -72,6 +91,7 @@ export function GuessRunner({ game, segment, onDone }: Props) {
         fen={state.fen}
         orientation={game.side === "w" ? "white" : "black"}
         movable={!fb}
+        lastMove={state.lastMove}
         onMove={onMove}
       />
       {fb ? (
@@ -79,7 +99,7 @@ export function GuessRunner({ game, segment, onDone }: Props) {
           <p className="text-lg font-semibold">
             {fb.kind === "full" && "¡Exacto!"}
             {fb.kind === "partial" && `Buena alternativa. El maestro jugó ${toSpanishSan(fb.masterSan)}.`}
-            {fb.kind === "miss" && `El maestro jugó ${toSpanishSan(fb.masterSan)}`}
+            {fb.kind === "miss" && `El maestro jugó ${toSpanishSan(fb.masterSan)}.`}
           </p>
           {comment && <p>{comment}</p>}
           <button
@@ -91,9 +111,12 @@ export function GuessRunner({ game, segment, onDone }: Props) {
           </button>
         </div>
       ) : (
-        <p role="status" className="text-center text-lg">
-          ¿Qué jugó el maestro?
-        </p>
+        <div className="flex flex-col gap-2 text-center">
+          {state.autoComment && <p className="text-sm text-[var(--subtle)]">{state.autoComment}</p>}
+          <p role="status" className="text-lg">
+            ¿Qué jugó el maestro?
+          </p>
+        </div>
       )}
     </div>
   );

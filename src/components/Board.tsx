@@ -41,10 +41,16 @@ export function Board({ fen, orientation, movable, lastMove, shapes, onMove }: B
   // Bumped after every user move so the board re-syncs with props even when
   // the parent keeps the same fen (wrong move).
   const [, setTick] = useState(0);
+  // Mount with the real position so chessground doesn't animate from the start position.
+  const initial = useRef({ fen, orientation, lastMove });
 
   useEffect(() => {
     if (!elementRef.current) return;
+    const { fen: initialFen, orientation: initialOrientation, lastMove: initialLast } = initial.current;
     apiRef.current = Chessground(elementRef.current, {
+      fen: initialFen,
+      orientation: initialOrientation,
+      lastMove: initialLast as [Key, Key] | undefined,
       animation: { enabled: true },
       premovable: { enabled: false },
     });
