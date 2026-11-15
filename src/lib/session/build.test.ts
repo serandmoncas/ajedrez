@@ -65,6 +65,9 @@ const blocksOf = (steps: { block: string }[]) =>
 const allIntroduced = (p: Progress): Progress => {
   const t = now.toISOString();
   p.introduced = { p1: t, p2: t, o1: t, "o1/a": t, "o1/b": t };
+  // Learned patterns have a (not yet due) review card.
+  withDue(p, "pattern:p1", -10);
+  withDue(p, "pattern:p2", -10);
   return p;
 };
 
@@ -269,5 +272,66 @@ describe("buildSession", () => {
     const ids = puzzleIds(buildSession(makeBundle(), p, now).steps);
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids.filter((i) => i === "z1")).toHaveLength(1);
+  });
+
+  describe("introduced pattern without a review card", () => {
+    const patternSteps = (steps: SessionStep[]) =>
+      steps.filter((s) => s.block === "pattern");
+
+    it("is served again without its intro (app closed after the intro)", () => {
+      const p = emptyProgress(now);
+      p.introduced = { p1: now.toISOString() };
+      const plan = buildSession(makeBundle(), p, now);
+      const steps = patternSteps(plan.steps);
+      expect(steps.map((s) => (s as { item: string }).item)).toEqual([
+        "puzzle",
+        "puzzle",
+        "puzzle",
+      ]);
+      expect(steps.every((s) => s.block === "pattern" && s.contentId === "p1")).toBe(true);
+      expect(puzzleIds(steps)).toEqual(["z1", "z2", "z3"]);
+    });
+
+    it("costs no intro minutes", () => {
+      const p = emptyProgress(now);
+      p.introduced = { p1: now.toISOString() };
+      const bundle = makeBundle();
+      bundle.items = bundle.items.filter((i) => i.id !== "p2");
+      const withIntro = buildSession(bundle, emptyProgress(now), now);
+      const without = buildSession(bundle, p, now);
+      expect(withIntro.estimatedMinutes - without.estimatedMinutes).toBe(2);
+    });
+
+    it("an introduced pattern with a card is skipped for the next new one", () => {
+      const p = emptyProgress(now);
+      p.introduced = { p1: now.toISOString() };
+      withDue(p, "pattern:p1", -10);
+      const steps = patternSteps(buildSession(makeBundle(), p, now).steps);
+      expect(steps[0]).toEqual({ block: "pattern", item: "intro", contentId: "p2" });
+      expect(puzzleIds(steps)).toEqual(["y1"]);
+    });
+
+    it("with an empty pool it is not selected again", () => {
+      const bundle = makeBundle();
+      delete bundle.puzzles.t1;
+      const p = emptyProgress(now);
+      p.introduced = { p1: now.toISOString() };
+      const steps = patternSteps(buildSession(bundle, p, now).steps);
+      expect(steps[0]).toEqual({ block: "pattern", item: "intro", contentId: "p2" });
+    });
+
+    it("whose puzzles are all used by today's reviews gets no empty block, and returns next session", () => {
+      const p = emptyProgress(now);
+      p.introduced = { p1: now.toISOString() };
+      for (const id of ["z1", "z2", "z3", "z4"]) withDue(p, `puzzle:${id}`, 1);
+      const today = buildSession(makeBundle(), p, now);
+      expect(patternSteps(today.steps)).toEqual([]);
+
+      // Next session: the puzzle cards were reviewed (no longer due).
+      for (const id of ["z1", "z2", "z3", "z4"]) withDue(p, `puzzle:${id}`, -3);
+      const next = patternSteps(buildSession(makeBundle(), p, now).steps);
+      expect(next.length).toBeGreaterThan(0);
+      expect(next.every((s) => s.block === "pattern" && s.item === "puzzle" && s.contentId === "p1")).toBe(true);
+    });
   });
 });

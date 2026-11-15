@@ -183,4 +183,24 @@ describe("applyStepResult", () => {
     applyStepResult(p, bundle, { block: "review", card: "pattern:p1", patternId: "p1", puzzle: pz("z1", 900) }, attempt(clean), now);
     expect(p).toEqual(snapshot);
   });
+
+  it("pattern intro with an empty pool creates the card right away (Good)", () => {
+    const b: Bundle = {
+      ...bundle,
+      items: [...bundle.items, item({ kind: "technique", id: "p9", order: 9, themes: ["none"] })],
+    };
+    const p = applyStepResult(fresh(), b, { block: "pattern", item: "intro", contentId: "p9" }, { kind: "seen" }, now);
+    expect(p.introduced).toEqual({ p9: iso });
+    sameCard(p, "pattern:p9", reviewCard(fresh(), "pattern:p9", Rating.Good, now));
+  });
+
+  it("pattern intro counts custom positions as part of the pool", () => {
+    const b: Bundle = {
+      ...bundle,
+      items: [...bundle.items, item({ kind: "pattern", id: "p9", order: 9 })],
+      puzzles: { ...bundle.puzzles, "custom:p9": [pz("k1", 0)] },
+    };
+    const p = applyStepResult(fresh(), b, { block: "pattern", item: "intro", contentId: "p9" }, { kind: "seen" }, now);
+    expect(p.cards).toEqual({});
+  });
 });

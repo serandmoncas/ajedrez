@@ -45,7 +45,7 @@ const byOrder = <T extends { order: number; id: string }>(a: T, b: T) =>
   a.order - b.order || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 /** Union (deduplicated by id) of the puzzles of the item's themes and its custom positions. */
-function puzzlePool(bundle: Bundle, item: Themed): BundlePuzzle[] {
+export function puzzlePool(bundle: Bundle, item: Themed): BundlePuzzle[] {
   const seen = new Set<string>();
   const pool: BundlePuzzle[] = [];
   for (const key of [...(item.themes ?? []), `custom:${item.id}`]) {
@@ -162,7 +162,14 @@ const sum = (rs: Review[]) => rs.reduce((t, r) => t + r.minutes, 0);
 
 type Block = { steps: SessionStep[]; minutes: number };
 
-/** New pattern block with up to `maxPuzzles` practice puzzles; null if nothing to teach. */
+type PatternBlock = Block & { puzzles: number };
+
+/**
+ * New pattern block with up to `maxPuzzles` practice puzzles; null if nothing to teach.
+ * "New" means not introduced yet, or introduced but still without a review card while it
+ * has puzzles (the app closed after the intro, or every puzzle was taken by that day's
+ * reviews): that one skips the intro and its first puzzle creates the card.
+ */
 function patternBlock(
   bundle: Bundle,
   p: Progress,
@@ -172,14 +179,20 @@ function patternBlock(
   const next = bundle.items
     .filter((i): i is Themed => i.kind === "pattern" || i.kind === "technique")
     .sort(byOrder)
-    .find((i) => !(i.id in p.introduced));
+    .find(
+      (i) =>
+        !(i.id in p.introduced) ||
+        (!(`pattern:${i.id}` in p.cards) && puzzlePool(bundle, i).length > 0),
+    );
   if (!next) return null;
+  const withIntro = !(next.id in p.introduced);
   const pool = puzzlePool(bundle, next).filter((z) => !used.has(z.id));
-  return (maxPuzzles: number): Block => {
-    const steps: SessionStep[] = [
-      { block: "pattern", item: "intro", contentId: next.id },
-    ];
+  const make = (maxPuzzles: number): PatternBlock => {
+    const steps: SessionStep[] = withIntro
+      ? [{ block: "pattern", item: "intro", contentId: next.id }]
+      : [];
     const remaining = [...pool];
+    let puzzles = 0;
     for (let n = 0; n < maxPuzzles; n++) {
       const puzzle = nextPuzzleForPattern(p, remaining, now);
       if (!puzzle) break;
@@ -190,12 +203,15 @@ function patternBlock(
         contentId: next.id,
         puzzle,
       });
+      puzzles++;
     }
     return {
       steps,
-      minutes: MINUTES.intro + (steps.length - 1) * MINUTES.puzzle,
+      puzzles,
+      minutes: (withIntro ? MINUTES.intro : 0) + puzzles * MINUTES.puzzle,
     };
   };
+  return { withIntro, make };
 }
 
 /** Opening block: the first unintroduced line of the first opening that has one. */
@@ -288,16 +304,17 @@ export function buildSession(
   const blocks: Block[] = [];
   if (pattern) {
     const remaining = remainingOf(SESSION_BUDGET.pattern);
+    const introCost = pattern.withIntro ? MINUTES.intro : 0;
     const puzzles = Math.min(
       PATTERN_PUZZLES,
-      Math.floor(remaining - MINUTES.intro),
+      Math.floor(remaining - introCost),
     );
-    const full = pattern(PATTERN_PUZZLES);
-    const hasPuzzles = full.steps.length > 1;
-    if (!hasPuzzles) {
-      if (remaining >= full.minutes) blocks.push(full);
+    const full = pattern.make(PATTERN_PUZZLES);
+    if (full.puzzles === 0) {
+      // Intro only (empty pool); an intro-less block with no puzzles is skipped.
+      if (full.steps.length > 0 && remaining >= full.minutes) blocks.push(full);
     } else if (puzzles >= 1) {
-      blocks.push(pattern(puzzles));
+      blocks.push(pattern.make(puzzles));
     }
   }
   if (opening && remainingOf(SESSION_BUDGET.opening) >= opening.minutes)
