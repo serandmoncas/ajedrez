@@ -44,7 +44,10 @@ export function Board({ fen, orientation, movable, lastMove, shapes, onMove }: B
 
   useEffect(() => {
     if (!elementRef.current) return;
-    apiRef.current = Chessground(elementRef.current, { animation: { enabled: true } });
+    apiRef.current = Chessground(elementRef.current, {
+      animation: { enabled: true },
+      premovable: { enabled: false },
+    });
     return () => {
       apiRef.current?.destroy();
       apiRef.current = null;
