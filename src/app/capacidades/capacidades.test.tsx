@@ -10,13 +10,19 @@ const item = (x: Record<string, unknown>) => x as unknown as BundleItem;
 const bundle: Bundle = {
   version: "t",
   items: [
-    item({ kind: "pattern", id: "p1", title: "Clavada", order: 1 }),
-    item({ kind: "technique", id: "p2", title: "Rayos X", order: 2 }),
+    item({ kind: "pattern", id: "p1", title: "Clavada", order: 1, themes: ["pin"] }),
+    item({ kind: "technique", id: "p2", title: "Rayos X", order: 2, themes: ["xRayAttack"] }),
+    // No puzzles at all: a lesson only, counted apart.
+    item({ kind: "technique", id: "t1", title: "Notación", order: 3 }),
+    item({ kind: "technique", id: "t2", title: "Tablero", order: 4 }),
     item({ kind: "opening", id: "o1", title: "Italiana", order: 1, lines: [{ id: "a" }, { id: "b" }] }),
     item({ kind: "game", id: "g1", title: "La Inmortal", order: 1 }),
     item({ kind: "game", id: "g2", title: "La Siempreviva", order: 2 }),
   ],
-  puzzles: {},
+  puzzles: {
+    pin: [{ id: "z1", fen: "", moves: [], rating: 1000, themes: ["pin"], opponentFirst: true }],
+    xRayAttack: [{ id: "z2", fen: "", moves: [], rating: 1000, themes: ["xRayAttack"], opponentFirst: true }],
+  },
 };
 
 const card = (stability: number): SerializedCard => ({
@@ -38,7 +44,8 @@ function progress(): Progress {
     g1: { segment: 2, full: 3, partial: 2, miss: 1, done: true },
     g2: { segment: 1, full: 1, partial: 0, miss: 0, done: false },
   };
-  p.rating = { r: 1234.6, rd: 120, updatedAt: now.toISOString() };
+  p.rating = { r: 1234.6, rd: 120, updatedAt: now.toISOString(), ratedCount: 5 };
+  p.introduced = { t1: now.toISOString() };
   return p;
 }
 
@@ -51,6 +58,7 @@ describe("Capacidades", () => {
     opened.value = { store: createMemoryStore(progress()), persistent: true };
     render(<CapabilitiesPage />);
     expect(await screen.findByText("Patrones dominados: 1 de 2")).toBeInTheDocument();
+    expect(screen.getByText("Lecciones de técnica vistas: 1 de 2")).toBeInTheDocument();
     expect(screen.getByText("Italiana: 1 de 2 líneas dominadas")).toBeInTheDocument();
     // Partial guesses count as half: (3 + 1) / 6 = 67 %.
     expect(screen.getByText("La Inmortal: 67 % de acierto")).toBeInTheDocument();
@@ -59,6 +67,14 @@ describe("Capacidades", () => {
     expect(screen.queryByText(/racha/i)).toBeNull();
     expect(screen.queryByText(/puntos/i)).toBeNull();
     expect(screen.queryByText("Tu progreso no se guardará en este modo")).toBeNull();
+  });
+
+  it("the rating shows no data until 5 rated puzzles have been played", async () => {
+    const p = progress();
+    p.rating = { ...p.rating, ratedCount: 4 };
+    opened.value = { store: createMemoryStore(p), persistent: true };
+    render(<CapabilitiesPage />);
+    expect(await screen.findByText("Rating estimado: aún sin datos")).toBeInTheDocument();
   });
 
   it("warns when progress cannot be stored", async () => {

@@ -20,3 +20,54 @@ body {
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Lesson markdown (Tailwind preflight resets the defaults). */
+.lesson {
+  line-height: 1.6;
+}
+.lesson > * + * {
+  margin-top: 0.75rem;
+}
+.lesson h2 {
+  margin-top: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+.lesson h3 {
+  margin-top: 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.lesson ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.lesson ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
+.lesson li + li {
+  margin-top: 0.25rem;
+}
+.lesson table {
+  border-collapse: collapse;
+}
+.lesson th,
+.lesson td {
+  border: 1px solid var(--subtle);
+  padding: 0.25rem 0.75rem;
+  text-align: left;
+}
+.lesson strong {
+  font-weight: 700;
+}
+.lesson em {
+  font-style: italic;
+}
+.lesson code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 0 0.25rem;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}

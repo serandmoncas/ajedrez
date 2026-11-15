@@ -8,6 +8,10 @@ import type { Bundle } from "@/lib/content/bundle-client";
 import type { Progress } from "@/lib/progress/types";
 import { isMastered } from "@/lib/srs/cards";
 import { MASTERY_STABILITY_DAYS } from "@/lib/srs/config";
+import { puzzlePool } from "@/lib/session/build";
+
+/** Rated puzzles needed before the estimated rating means anything. */
+const MIN_RATED_PUZZLES = 5;
 
 export default function CapabilitiesPage() {
   const data = useAppData();
@@ -39,8 +43,12 @@ export default function CapabilitiesPage() {
 
 function Summary({ bundle, p }: { bundle: Bundle; p: Progress }) {
   const now = new Date();
-  const themed = bundle.items.filter((i) => i.kind === "pattern" || i.kind === "technique");
+  const allThemed = bundle.items.flatMap((i) => (i.kind === "pattern" || i.kind === "technique" ? [i] : []));
+  // Items without any puzzle can't be mastered: they are lessons, counted apart.
+  const themed = allThemed.filter((i) => puzzlePool(bundle, i).length > 0);
+  const lessons = allThemed.filter((i) => puzzlePool(bundle, i).length === 0);
   const mastered = themed.filter((i) => isMastered(p, i.id, now)).length;
+  const lessonsSeen = lessons.filter((i) => i.id in p.introduced).length;
   const openings = bundle.items.flatMap((i) => (i.kind === "opening" ? [i] : []));
   const games = bundle.items.flatMap((i) => (i.kind === "game" && p.games[i.id]?.done ? [i] : []));
   const lineMastered = (cardId: string) => (p.cards[cardId]?.stability ?? 0) >= MASTERY_STABILITY_DAYS;
@@ -58,6 +66,11 @@ function Summary({ bundle, p }: { bundle: Bundle; p: Progress }) {
         <p>
           Patrones dominados: {mastered} de {themed.length}
         </p>
+        {lessons.length > 0 && (
+          <p>
+            Lecciones de técnica vistas: {lessonsSeen} de {lessons.length}
+          </p>
+        )}
       </section>
       <section className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold">Aperturas</h2>
@@ -90,7 +103,10 @@ function Summary({ bundle, p }: { bundle: Bundle; p: Progress }) {
       </section>
       <section className="flex flex-col gap-2">
         <h2 className="text-xl font-semibold">Rating</h2>
-        <p>Rating estimado: {Math.round(p.rating.r)}</p>
+        <p>
+          Rating estimado:{" "}
+          {(p.rating.ratedCount ?? 0) >= MIN_RATED_PUZZLES ? Math.round(p.rating.r) : "aún sin datos"}
+        </p>
       </section>
     </div>
   );

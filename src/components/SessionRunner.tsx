@@ -11,11 +11,20 @@ import type { Puzzle } from "@/lib/content/puzzle";
 import type { ProgressStore } from "@/lib/progress/store";
 import type { Progress } from "@/lib/progress/types";
 import type { Attempt } from "@/lib/srs/cards";
-import { applyStepResult, type StepResult } from "@/lib/session/apply";
+import {
+  applyStepResult,
+  completeDailySession,
+  dailySessionDone,
+  type StepResult,
+} from "@/lib/session/apply";
 import { buildSession, type SessionStep } from "@/lib/session/build";
 
 type Props = { bundle: Bundle; store: ProgressStore; now?: () => Date };
-type Run = { progress: Progress; steps: SessionStep[]; index: number; extra: boolean };
+/**
+ * extra: review-only (or explicitly extra) run; repeat: the daily session was already done today.
+ * gen distinguishes successive runs so step screens remount.
+ */
+type Run = { progress: Progress; steps: SessionStep[]; index: number; extra: boolean; repeat: boolean; gen: number };
 
 export function SessionRunner({ bundle, store, now = () => new Date() }: Props) {
   const [run, setRun] = useState<Run | null>(null);
@@ -29,8 +38,11 @@ export function SessionRunner({ bundle, store, now = () => new Date() }: Props) 
       .load()
       .then((p) => {
         if (cancelled) return;
-        // The plan is built once, at session start.
-        setRun({ progress: p, steps: buildSession(bundle, p, clock.current()).steps, index: 0, extra: false });
+        // The plan is built once, at session start. Done today already: review only.
+        const at = clock.current();
+        const repeat = dailySessionDone(p, at);
+        const steps = buildSession(bundle, p, at, repeat ? { extra: true } : {}).steps;
+        setRun({ progress: p, steps, index: 0, extra: repeat, repeat, gen: 0 });
       })
       .catch(() => !cancelled && setLoadError("No se pudo cargar tu progreso."));
     return () => {
@@ -40,7 +52,10 @@ export function SessionRunner({ bundle, store, now = () => new Date() }: Props) 
 
   // Saves after every step, so closing the app mid-session keeps what was done.
   async function finishStep(current: Run, step: SessionStep, result: StepResult) {
-    const progress = applyStepResult(current.progress, bundle, step, result, clock.current());
+    const at = clock.current();
+    let progress = applyStepResult(current.progress, bundle, step, result, at);
+    const finishesDaily = !current.extra && current.index + 1 === current.steps.length;
+    if (finishesDaily) progress = completeDailySession(progress, at);
     try {
       await store.save(progress);
       setSaveError(false);
@@ -50,9 +65,9 @@ export function SessionRunner({ bundle, store, now = () => new Date() }: Props) 
     setRun({ ...current, progress, index: current.index + 1 });
   }
 
-  function startExtra(current: Run) {
-    const plan = buildSession(bundle, current.progress, clock.current(), { extra: true });
-    setRun({ progress: current.progress, steps: plan.steps, index: 0, extra: true });
+  function startExtra(current: Run, allowNew = false) {
+    const plan = buildSession(bundle, current.progress, clock.current(), { extra: true, allowNew });
+    setRun({ progress: current.progress, steps: plan.steps, index: 0, extra: true, repeat: false, gen: current.gen + 1 });
   }
 
   if (loadError) return <p>{loadError}</p>;
@@ -66,13 +81,21 @@ export function SessionRunner({ bundle, store, now = () => new Date() }: Props) 
           No se pudo guardar el último paso.
         </p>
       )}
+      {run.repeat && (
+        <div className="flex flex-col gap-2 rounded border p-3 text-center">
+          <p>Ya hiciste la sesión de hoy. Esto es solo repaso.</p>
+          <button type="button" onClick={() => startExtra(run, true)} className="min-h-12 rounded border px-4 py-2">
+            Aprender algo nuevo
+          </button>
+        </div>
+      )}
       {step ? (
         <>
           <p className="text-center text-[var(--subtle)]">
             Paso {run.index + 1} de {run.steps.length}
           </p>
           <StepView
-            key={`${run.extra}-${run.index}`}
+            key={`${run.gen}-${run.index}`}
             bundle={bundle}
             step={step}
             introduced={run.progress.introduced}
@@ -110,6 +133,9 @@ function SessionEnd({ run, onExtra }: { run: Run; onExtra: () => void }) {
       <Link href="/capacidades" className="underline">
         Ver capacidades
       </Link>
+      <Link href="/" className="underline">
+        Volver al inicio
+      </Link>
     </div>
   );
 }
@@ -133,24 +159,30 @@ function StepView({ bundle, step, introduced, onDone }: StepProps) {
     ) : (
       <Missing onSkip={() => onDone({ kind: "seen" })} />
     );
-  const puzzle = (z: Puzzle) => (
+  // Level-1 hints use the pattern's own themes first, then the puzzle's.
+  const themesOf = (patternId: string | undefined, z: Puzzle) => {
+    const owner = patternId ? bundle.items.find((i) => i.id === patternId) : undefined;
+    const own = owner && (owner.kind === "pattern" || owner.kind === "technique") ? (owner.themes ?? []) : [];
+    return [...new Set([...own, ...z.themes])];
+  };
+  const puzzle = (z: Puzzle, patternId?: string) => (
     <PuzzleRunner
       fen={z.fen}
       moves={z.moves}
-      themes={z.themes}
+      themes={themesOf(patternId, z)}
       opponentFirst={(z as Partial<BundlePuzzle>).opponentFirst ?? true}
       onDone={attempt}
     />
   );
-  const line = (openingId: string, lineId: string) => {
+  const line = (openingId: string, lineId: string, demoFirst = false) => {
     const opening = findItem(bundle, "opening", openingId);
     if (!opening) return <Missing onSkip={() => onDone({ kind: "seen" })} />;
-    return <LineRunner opening={opening} lineId={lineId} onDone={attempt} />;
+    return <LineRunner opening={opening} lineId={lineId} onDone={attempt} demoFirst={demoFirst} />;
   };
 
   switch (step.block) {
     case "review": {
-      if (step.puzzle) return puzzle(step.puzzle);
+      if (step.puzzle) return puzzle(step.puzzle, step.patternId);
       if (step.card.startsWith("combo:")) {
         const combo = findItem(bundle, "combination", step.card.slice("combo:".length));
         if (!combo) return <Missing onSkip={() => onDone({ kind: "seen" })} />;
@@ -159,7 +191,22 @@ function StepView({ bundle, step, introduced, onDone }: StepProps) {
           return t && (t.kind === "pattern" || t.kind === "technique") ? (t.themes ?? []) : [];
         });
         return (
-          <PuzzleRunner fen={combo.fen} moves={combo.solution} themes={themes} opponentFirst={false} onDone={attempt} />
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-2xl font-bold">{combo.title}</h1>
+              <p className="text-[var(--subtle)]">
+                {combo.game.white} – {combo.game.black}, {combo.game.year}
+              </p>
+            </div>
+            <PuzzleRunner
+              fen={combo.fen}
+              moves={combo.solution}
+              themes={themes}
+              opponentFirst={false}
+              onDone={attempt}
+              afterSolved={<div className="lesson" dangerouslySetInnerHTML={{ __html: combo.html }} />}
+            />
+          </div>
         );
       }
       if (step.card.startsWith("line:")) {
@@ -171,23 +218,52 @@ function StepView({ bundle, step, introduced, onDone }: StepProps) {
     }
     case "pattern":
       if (step.item === "intro") return lesson(bundle.items.find((i) => i.id === step.contentId));
-      return step.puzzle ? puzzle(step.puzzle) : <Missing onSkip={() => onDone({ kind: "seen" })} />;
+      return step.puzzle ? puzzle(step.puzzle, step.contentId) : <Missing onSkip={() => onDone({ kind: "seen" })} />;
     case "opening":
       // The intro step carries lineId "": it is about the opening as a whole.
       if (step.item === "intro") return lesson(findItem(bundle, "opening", step.openingId));
-      return line(step.openingId, step.lineId);
+      // A new line is shown move by move before it is drilled.
+      return line(step.openingId, step.lineId, true);
     case "game": {
       const game = findItem(bundle, "game", step.gameId);
       if (!game || !game.segments[step.segment]) return <Missing onSkip={() => onDone({ kind: "seen" })} />;
       return (
-        <GuessRunner
-          game={{ ...game, body: "" }}
+        <GameStep
+          game={game}
           segment={step.segment}
+          titles={titles}
+          introduced={introduced}
           onDone={(counts) => onDone({ kind: "game", counts })}
         />
       );
     }
   }
+}
+
+type GameItem = Extract<BundleItem, { kind: "game" }>;
+type GameStepProps = {
+  game: GameItem;
+  segment: number;
+  titles: Record<string, string>;
+  introduced: Record<string, string>;
+  onDone: (counts: { full: number; partial: number; miss: number }) => void;
+};
+
+/** A game segment, preceded by the game's lesson before the first segment. */
+function GameStep({ game, segment, titles, introduced, onDone }: GameStepProps) {
+  const [showIntro, setShowIntro] = useState(segment === 0);
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-center font-semibold">
+        Tramo {segment + 1} de {game.segments.length} — {game.title}
+      </p>
+      {showIntro ? (
+        <Lesson item={game} titles={titles} introduced={introduced} onContinue={() => setShowIntro(false)} />
+      ) : (
+        <GuessRunner game={{ ...game, body: "" }} segment={segment} onDone={onDone} />
+      )}
+    </div>
+  );
 }
 
 function Missing({ onSkip }: { onSkip: () => void }) {

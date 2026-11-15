@@ -22,9 +22,9 @@ describe("Lesson", () => {
     expect(screen.getByText("Ejemplo uno")).toBeInTheDocument();
     expect(screen.getByTestId("board")).toHaveAttribute("data-movable", "false");
     expect(screen.getByRole("link", { name: "Apertura Italiana" })).toHaveAttribute("href", "/aprender/italiana");
-    expect(screen.getByText("(ya la estudiaste)")).toBeInTheDocument();
+    expect(screen.getByText("(ya lo estudiaste)")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "La Inmortal" })).toHaveAttribute("href", "/aprender/inmortal");
-    expect(screen.getByText("(la verás más adelante)")).toBeInTheDocument();
+    expect(screen.getByText("(lo verás más adelante)")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continuar" }));
     expect(onContinue).toHaveBeenCalled();
   });
@@ -33,5 +33,41 @@ describe("Lesson", () => {
     render(<Lesson item={item} onContinue={() => {}} titles={{}} />);
     expect(screen.queryByText("italiana")).toBeNull();
     expect(screen.getAllByRole("link", { name: "contenido" })).toHaveLength(2);
+  });
+
+  it("styles the lesson body with the .lesson class", () => {
+    const { container } = render(<Lesson item={item} onContinue={() => {}} />);
+    expect(container.querySelector(".lesson")?.innerHTML).toBe("<p>Ataca dos piezas.</p>");
+  });
+
+  it("an opening shows its traps with Spanish moves and the comment", () => {
+    const opening = {
+      kind: "opening",
+      id: "italiana",
+      title: "Italiana",
+      html: "",
+      lines: [],
+      traps: [{ name: "Trampa X", moves: ["e4", "e5", "Nf3", "Nc6", "Bc4", "Nd4"], comment: "Cuidado con e5." }],
+    } as unknown as BundleItem;
+    render(<Lesson item={opening} onContinue={() => {}} />);
+    expect(screen.getByRole("heading", { name: "Trampa X" })).toBeInTheDocument();
+    expect(screen.getByText("1. e4 e5 2. Cf3 Cc6 3. Ac4 Cd4")).toBeInTheDocument();
+    expect(screen.getByText("Cuidado con e5.")).toBeInTheDocument();
+  });
+
+  it("a game shows players, year and event", () => {
+    const game = {
+      kind: "game",
+      id: "opera",
+      title: "La ópera",
+      html: "<p>Historia.</p>",
+      white: "Paul Morphy",
+      black: "Duque",
+      year: 1858,
+      event: "Partida de consulta",
+    } as unknown as BundleItem;
+    render(<Lesson item={game} onContinue={() => {}} />);
+    expect(screen.getByText("Paul Morphy – Duque, 1858 (Partida de consulta)")).toBeInTheDocument();
+    expect(screen.getByText("Historia.")).toBeInTheDocument();
   });
 });
