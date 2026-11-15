@@ -30,8 +30,8 @@ comments:
   "7": "3...Ag4 clava el caballo de f3 contra la dama. Hoy se juega más 3...exd4 o 3...Cf6. Morphy captura en e5."
   "9": "Si las negras retoman con 4...dxe5, es un error: 5.Dxd8+ Rxd8 6.Cxe5 gana un peón y el rey negro ya no puede enrocar. Por eso cambiaron el alfil por el caballo. Morphy retoma con la dama, que queda activa en f3."
   "11": "Tras 5...dxe5 la dama blanca ya está en juego y las negras no han sacado ninguna pieza (su alfil se cambió). 6.Ac4 apunta a f7."
-  "13": "6...Cf6 es un error: ahora 7.Db3 ataca a la vez f7 y b7, y es la mejor jugada. Era mejor defender f7 con 6...Df6."
-  "15": "7...De7 frena la amenaza: si 7...Cc6, 8.Axf7+ Re7 9.De6#. Pero la dama tapa al alfil de f8. Con 8.Cc3 Morphy saca otra pieza en vez de ir por el peón de b7; también así gana."
+  "13": "6...Cf6 es un error: ahora 7.Db3, junto con el alfil de c4 ataca f7, y además ataca b7; es la mejor jugada. Era mejor defender f7 con 6...Df6."
+  "15": "7...De7 frena la amenaza: si 7...Cc6, 8.Axf7+ Re7 (o Rd7) 9.De6#. Pero la dama tapa al alfil de f8. Con 8.Cc3 Morphy saca otra pieza en vez de ir por el peón de b7; también así gana."
   "17": "8...c6 libera la séptima fila: ahora la dama de e7 defiende el peón de b7. 9.Ag5 clava el caballo de f6 contra la dama."
   "19": "9...b5 es un error: quiere echar al alfil, pero 10.Cxb5! gana. Morphy entrega el caballo para abrir líneas contra el rey negro, que sigue en el centro."
   "21": "Tras 10...cxb5, 11.Axb5+ da jaque. El caballo que tape en d7 quedará clavado contra el rey."
@@ -39,7 +39,7 @@ comments:
   "25": "13.Txd7! gana: elimina un defensor. Tras 13...Txd7 la torre negra de d7 queda clavada por el alfil de b5."
   "27": "La otra torre se suma contra d7. La torre de d7 está clavada contra el rey, y el caballo de f6, que la defiende, está clavado contra la dama."
   "29": "14...De6 intenta desclavar el caballo de f6. Morphy cambia su alfil por la torre: 15.Axd7+."
-  "31": "¡16.Db8+!! Sacrificio de dama: es jaque y la única respuesta legal es capturarla con el caballo de d7, que así deja abierta la columna d para la torre."
+  "31": "16.Db8+!! Sacrificio de dama: es jaque y la única respuesta legal es capturarla con el caballo de d7, que así deja abierta la columna d para la torre."
   "33": "Mate. Morphy da mate con las dos únicas piezas que le quedan además del rey: la torre da jaque en d8 y el alfil de g5 cubre e7. A esta posición final se le llama a veces el «mate de la ópera»."
 claims:
   - id: dxe5-error

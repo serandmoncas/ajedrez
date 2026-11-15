@@ -11,9 +11,9 @@ examples:
   - fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     solution: ["e2e4"]
     caption: "1.e4: el peón de rey avanza de e2 a e4. Los peones no llevan letra."
-  - fen: "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3"
-    solution: ["c4f7"]
-    caption: "Axf7+: el alfil de c4 captura (x) en f7 y da jaque (+)."
+  - fen: "r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4"
+    solution: ["h5f7"]
+    caption: "Dxf7#: la dama de h5 captura (x) en f7 y da jaque mate (#), protegida por el alfil de c4."
   - fen: "8/4P1k1/8/8/8/8/8/4K3 w - - 0 1"
     solution: ["e7e8q"]
     caption: "e8=D: el peón llega a la última fila y corona dama."

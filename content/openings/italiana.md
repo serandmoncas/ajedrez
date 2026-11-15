@@ -63,15 +63,15 @@ claims:
 ---
 ## Qué es
 
-La Italiana empieza con **1.e4 e5 2.Cf3 Cc6 3.Ac4**. El alfil va a c4, la llamada
-"diagonal italiana", desde donde apunta a **f7**: el punto débil de las negras, defendido
+La Italiana empieza con **1.e4 e5 2.Cf3 Cc6 3.Ac4**. El alfil va a c4, en la diagonal
+a2-g8, desde donde apunta a **f7**: el punto débil de las negras, defendido
 solo por el rey. Si las negras responden **3...Ac5** se llama **Giuoco Piano** ("juego
 tranquilo"); si responden 3...Cf6 es la defensa de los dos caballos, que se estudia aparte.
 
 ## Un poco de historia
 
 Es una de las aperturas más antiguas que se conocen: aparece en el manuscrito de
-Gotinga, la obra más antigua conocida sobre el ajedrez moderno, y la estudiaron en el siglo
+Gotinga, una de las obras más antiguas conocidas sobre el ajedrez moderno, y la estudiaron en el siglo
 XVI jugadores como Pedro Damiano y Giulio Polerio. Gioachino Greco la jugaba en las partidas
 que recopiló hacia 1620, y casi siempre respondía a 3...Ac5 con 4.c3. En el siglo XX la
 Española (3.Ab5) la superó en popularidad; la Italiana volvió a jugarse más a finales de siglo con las
