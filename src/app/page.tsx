@@ -13,7 +13,10 @@ export default function Home() {
       >
         Empezar sesión
       </Link>
-      <nav className="flex justify-center gap-6">
+      <nav className="flex flex-wrap justify-center gap-6">
+        <Link href="/biblioteca" className="underline">
+          Biblioteca
+        </Link>
         <Link href="/capacidades" className="underline">
           Capacidades
         </Link>

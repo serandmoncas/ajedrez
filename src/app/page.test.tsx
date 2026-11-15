@@ -12,9 +12,14 @@ describe("Home", () => {
     );
   });
 
-  it("links to capacidades, ajustes and créditos", () => {
+  it("links to biblioteca, capacidades, ajustes and créditos", () => {
     render(<Home />);
-    for (const [name, href] of [["Capacidades", "/capacidades"], ["Ajustes", "/ajustes"], ["Créditos", "/creditos"]]) {
+    for (const [name, href] of [
+      ["Biblioteca", "/biblioteca"],
+      ["Capacidades", "/capacidades"],
+      ["Ajustes", "/ajustes"],
+      ["Créditos", "/creditos"],
+    ]) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
     }
   });
