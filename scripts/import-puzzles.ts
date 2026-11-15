@@ -5,7 +5,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import readline from "node:readline";
 import { loadContent } from "../src/lib/content/load";
-import { parsePuzzleRow, selectPuzzles, type PuzzleRow } from "./lib/puzzles";
+import { DEFAULTS, bandOf, matchesFilters, parsePuzzleRow, selectPuzzles, type PuzzleRow } from "./lib/puzzles";
 
 const OUT_DIR = path.join("content", "puzzles");
 
@@ -25,16 +25,25 @@ async function main() {
   }
   const themes = [...wanted].sort();
 
-  // Keep only rows that can matter, so memory stays small on a ~300 MB file.
+  // Filter while streaming and cap each (theme, 100-point band) bucket at perTheme rows:
+  // selectPuzzles never takes more than perTheme from one band, so memory stays bounded.
   const seenThemes = new Set<string>();
-  const kept: PuzzleRow[] = [];
+  const buckets = new Map<string, PuzzleRow[]>();
   const rl = readline.createInterface({ input: createReadStream(csvPath), crlfDelay: Infinity });
   for await (const line of rl) {
     const row = parsePuzzleRow(line);
     if (!row) continue;
     for (const t of row.themes) seenThemes.add(t);
-    if (row.themes.some((t) => wanted.has(t))) kept.push(row);
+    if (!matchesFilters(row)) continue;
+    for (const t of row.themes) {
+      if (!wanted.has(t)) continue;
+      const key = `${t}\0${bandOf(row.rating)}`;
+      const bucket = buckets.get(key);
+      if (!bucket) buckets.set(key, [row]);
+      else if (bucket.length < DEFAULTS.perTheme) bucket.push(row);
+    }
   }
+  const kept = [...buckets.values()].flat();
 
   await mkdir(OUT_DIR, { recursive: true });
   const allThemes = [...seenThemes].sort();

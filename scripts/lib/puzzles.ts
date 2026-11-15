@@ -10,7 +10,23 @@ export type SelectOptions = {
   minPlays?: number;
 };
 
-const BAND = 100;
+export const BAND = 100;
+export const DEFAULTS = { min: 600, max: 1800, perTheme: 80, minPopularity: 80, minPlays: 500 };
+
+export function bandOf(rating: number): number {
+  return Math.floor(rating / BAND);
+}
+
+// Rating in [min, max] (inclusive), popularity >= minPopularity, nbPlays >= minPlays.
+export function matchesFilters(row: PuzzleRow, opts: SelectOptions = {}): boolean {
+  const { min, max, minPopularity, minPlays } = { ...DEFAULTS, ...opts };
+  return (
+    row.rating >= min &&
+    row.rating <= max &&
+    row.popularity >= minPopularity &&
+    row.nbPlays >= minPlays
+  );
+}
 
 // CSV: PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags[,...]
 // Lichess puzzle fields never contain commas or quotes, so a plain split is enough.
@@ -44,8 +60,10 @@ export function toPuzzle(row: PuzzleRow): Puzzle {
 function spread(candidates: PuzzleRow[], limit: number): PuzzleRow[] {
   const bands = new Map<number, PuzzleRow[]>();
   for (const row of [...candidates].sort((a, b) => a.rating - b.rating || a.id.localeCompare(b.id))) {
-    const key = Math.floor(row.rating / BAND);
-    bands.set(key, [...(bands.get(key) ?? []), row]);
+    const key = bandOf(row.rating);
+    const band = bands.get(key);
+    if (band) band.push(row);
+    else bands.set(key, [row]);
   }
   const queues = [...bands.entries()].sort((a, b) => a[0] - b[0]).map(([, rows]) => rows);
   const picked: PuzzleRow[] = [];
@@ -70,13 +88,12 @@ export function selectPuzzles(
   themes: string[],
   opts: SelectOptions = {},
 ): Record<string, Puzzle[]> {
-  const { min = 600, max = 1800, perTheme = 80, minPopularity = 80, minPlays = 500 } = opts;
+  const { perTheme } = { ...DEFAULTS, ...opts };
   const wanted = new Set(themes);
   const pool: Record<string, PuzzleRow[]> = Object.fromEntries(themes.map((t) => [t, []]));
   for (const row of rows) {
     if (!row) continue;
-    if (row.rating < min || row.rating > max) continue;
-    if (row.popularity < minPopularity || row.nbPlays < minPlays) continue;
+    if (!matchesFilters(row, opts)) continue;
     for (const t of row.themes) if (wanted.has(t)) pool[t].push(row);
   }
   return Object.fromEntries(

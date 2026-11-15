@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { parsePuzzleRow, selectPuzzles } from "./puzzles";
+import { matchesFilters, parsePuzzleRow, selectPuzzles, type PuzzleRow } from "./puzzles";
 
 const lines = readFileSync(path.join(__dirname, "__fixtures__", "puzzles.csv"), "utf8")
   .split("\n")
@@ -49,5 +49,24 @@ describe("selectPuzzles", () => {
 
   it("returns an empty list for a theme without puzzles", () => {
     expect(selectPuzzles(rows, ["nope"])).toEqual({ nope: [] });
+  });
+});
+
+describe("matchesFilters", () => {
+  const base: PuzzleRow = {
+    id: "x", fen: "f", moves: ["a1a2", "a2a3"], themes: [], rating: 600, popularity: 80, nbPlays: 500,
+  };
+  it("accepts the inclusive boundaries", () => {
+    expect(matchesFilters(base)).toBe(true);
+    expect(matchesFilters({ ...base, rating: 1800 })).toBe(true);
+  });
+  it("rejects just outside each boundary", () => {
+    expect(matchesFilters({ ...base, rating: 599 })).toBe(false);
+    expect(matchesFilters({ ...base, rating: 1801 })).toBe(false);
+    expect(matchesFilters({ ...base, popularity: 79 })).toBe(false);
+    expect(matchesFilters({ ...base, nbPlays: 499 })).toBe(false);
+  });
+  it("honours custom options", () => {
+    expect(matchesFilters({ ...base, rating: 1000 }, { min: 1100 })).toBe(false);
   });
 });
